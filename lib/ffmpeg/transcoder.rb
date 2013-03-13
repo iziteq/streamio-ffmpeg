@@ -60,7 +60,7 @@ module FFMPEG
           stderr.each('size=', &next_line)
         end
 
-      rescue Timeout::Error => e
+      rescue Timeout::Error
         FFMPEG.logger.error "Process hung...\nCommand\n#{command}\nOutput\n#{output}\n"
         raise Error, "Process hung. Full output: #{output}"
       end
