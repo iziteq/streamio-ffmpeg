@@ -14,7 +14,7 @@ module FFMPEG
 
       # ffmpeg will output to stderr
       command = "#{FFMPEG.ffmpeg_binary} -i #{Shellwords.escape(path)}"
-      output = Open3.popen3(command) { |stdin, stdout, stderr| stderr.read }
+      output = POSIX::Spawn::Child.new(command).err
 
       fix_encoding(output)
 
@@ -94,11 +94,11 @@ module FFMPEG
     end
 
     def transcode(output_file, options = EncodingOptions.new, transcoder_options = {}, &block)
-      Transcoder.new(self, output_file, options, transcoder_options).run &block
+      Transcoder.new(self, output_file, options, transcoder_options).run(&block)
     end
 
     def screenshot(output_file, options = EncodingOptions.new, transcoder_options = {}, &block)
-      Transcoder.new(self, output_file, options.merge(screenshot: true), transcoder_options).run &block
+      Transcoder.new(self, output_file, options.merge(screenshot: true), transcoder_options).run(&block)
     end
 
     protected
