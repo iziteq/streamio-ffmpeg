@@ -36,7 +36,7 @@ module FFMPEG
       command = "#{FFMPEG.ffmpeg_binary} -y -i #{Shellwords.escape(@movie.path)} #{@raw_options} #{Shellwords.escape(@output_file)}"
       FFMPEG.logger.info("Running transcoding...\n#{command}\n")
       output = ""
-      pid, _, _, stderr = POSIX::Spawn.popen4(command)
+      pid, stdin, stdout, stderr = POSIX::Spawn.popen4(command)
 
       begin
         yield(0.0) if block_given?
@@ -75,6 +75,8 @@ module FFMPEG
       end
 
       encoded
+    ensure
+      [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
     end
 
     def encoding_succeeded?
