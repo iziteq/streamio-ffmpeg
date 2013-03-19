@@ -6,7 +6,6 @@ require 'stringio'
 require 'ffmpeg/version'
 require 'ffmpeg/errors'
 require 'ffmpeg/movie'
-require 'ffmpeg/io_monkey'
 require 'ffmpeg/transcoder'
 require 'ffmpeg/encoding_options'
 

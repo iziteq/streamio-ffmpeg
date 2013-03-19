@@ -53,7 +53,7 @@ module FFMPEG
       context "with timeout disabled" do
         before do
           @original_timeout = Transcoder.timeout
-          Transcoder.timeout = false
+          Transcoder.timeout = nil
         end
 
         it "should still work" do
@@ -62,18 +62,6 @@ module FFMPEG
         end
 
         after { Transcoder.timeout = @original_timeout }
-      end
-
-      it "should transcode the movie with progress given an awesome movie" do
-        FileUtils.rm_f "#{tmp_path}/awesome.flv"
-
-        transcoder = Transcoder.new(movie, "#{tmp_path}/awesome.flv")
-        progress_updates = []
-        transcoder.run { |progress| progress_updates << progress }
-        transcoder.encoded.should be_valid
-        progress_updates.should include(0.0, 1.0)
-        progress_updates.length.should >= 3
-        File.exists?("#{tmp_path}/awesome.flv").should be_true
       end
 
       it "should transcode the movie with EncodingOptions" do

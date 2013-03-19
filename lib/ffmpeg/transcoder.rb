@@ -3,7 +3,7 @@ require 'shellwords'
 
 module FFMPEG
   class Transcoder
-    @@timeout = 30
+    @@timeout = 300
 
     def self.timeout=(time)
       @@timeout = time
@@ -36,37 +36,15 @@ module FFMPEG
       command = "#{FFMPEG.ffmpeg_binary} -y -i #{Shellwords.escape(@movie.path)} #{@raw_options} #{Shellwords.escape(@output_file)}"
       FFMPEG.logger.info("Running transcoding...\n#{command}\n")
       output = ""
-      pid, stdin, stdout, stderr = POSIX::Spawn.popen4(command)
 
       begin
-        yield(0.0) if block_given?
-        next_line = Proc.new do |line|
-          fix_encoding(line)
-          output << line
-          if line.include?("time=")
-            if line =~ /time=(\d+):(\d+):(\d+.\d+)/ # ffmpeg 0.8 and above style
-              time = ($1.to_i * 3600) + ($2.to_i * 60) + $3.to_f
-            else # better make sure it wont blow up in case of unexpected output
-              time = 0.0
-            end
-            progress = time / @movie.duration
-            yield(progress) if block_given?
-          end
-        end
-
-        if @@timeout
-          stderr.each_with_timeout(pid, @@timeout, 'size=', &next_line)
-        else
-          stderr.each('size=', &next_line)
-        end
-
-      rescue Timeout::Error
+        POSIX::Spawn::Child.new(command, timeout: @@timeout)
+      rescue POSIX::Spawn::TimeoutExceeded
         FFMPEG.logger.error "Process hung...\nCommand\n#{command}\nOutput\n#{output}\n"
         raise Error, "Process hung. Full output: #{output}"
       end
 
       if encoding_succeeded?
-        yield(1.0) if block_given?
         FFMPEG.logger.info "Transcoding of #{@movie.path} to #{@output_file} succeeded\n"
       else
         errors = "Errors: #{@errors.join(", ")}. "
@@ -75,8 +53,6 @@ module FFMPEG
       end
 
       encoded
-    ensure
-      [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
     end
 
     def encoding_succeeded?
